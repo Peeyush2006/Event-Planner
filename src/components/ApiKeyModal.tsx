@@ -1,0 +1,140 @@
+import React, { useState } from 'react';
+import { X, Key, ShieldCheck, Check, Sparkles, ExternalLink } from 'lucide-react';
+import { getStoredApiKey, saveApiKey } from '../services/geminiApi';
+
+interface ApiKeyModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onKeySaved: (key: string) => void;
+}
+
+export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
+  isOpen,
+  onClose,
+  onKeySaved,
+}) => {
+  if (!isOpen) return null;
+
+  const [keyInput, setKeyInput] = useState(getStoredApiKey());
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveApiKey(keyInput);
+    onKeySaved(keyInput);
+    setSavedSuccess(true);
+    setTimeout(() => {
+      setSavedSuccess(false);
+      onClose();
+    }, 1200);
+  };
+
+  const handleClear = () => {
+    saveApiKey('');
+    setKeyInput('');
+    onKeySaved('');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+        {/* Header */}
+        <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+              <Key className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-slate-900">Google Gemini API Configuration</h3>
+              <p className="text-[11px] text-slate-500">Optional live GenAI enhancement</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 p-1"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Form Body */}
+        <form onSubmit={handleSave} className="p-5 space-y-4 text-xs">
+          <div className="p-3 rounded-xl bg-indigo-50/60 border border-indigo-100 text-indigo-950 space-y-1.5 leading-relaxed">
+            <div className="flex items-center gap-1.5 font-bold text-indigo-900">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Offline Intelligence Ready</span>
+            </div>
+            <p>
+              Planora works <strong>100% out-of-the-box</strong> using our algorithmic heuristic engine even without an API key!
+            </p>
+            <p className="text-slate-600">
+              Adding a Gemini API key unlocks unconstrained real-time responses and live conversational reasoning with <code>gemini-2.0-flash</code>.
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Gemini API Key</label>
+            <input
+              type="password"
+              placeholder="AIzaSy..."
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 font-mono text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-medium"
+            >
+              <span>Get a free Gemini API key</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+
+            {keyInput && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="text-rose-600 hover:text-rose-700 font-medium"
+              >
+                Clear Key
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>Stored strictly in your local browser storage. Never transmitted to any third party.</span>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+            >
+              {savedSuccess ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Saved!</span>
+                </>
+              ) : (
+                <span>Save Configuration</span>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
