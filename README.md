@@ -2,7 +2,7 @@
 > An intelligent, context-aware GenAI planning assistant that empowers organizers to seamlessly coordinate **Weddings**, **Birthdays**, and **Community Events** with automated dynamic budgets, chronological timelines, vendor checklists, accessibility audits, and personalized creative concepts.
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-emerald?style=flat-square&logo=vite)](https://vitejs.dev/)
-[![Tests](https://img.shields.io/badge/Tests-13%20Passed-indigo?style=flat-square&logo=vitest)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-32%20Passed-indigo?style=flat-square&logo=vitest)](https://vitest.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-ES2022-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-slate?style=flat-square)](LICENSE)
 [![Branch](https://img.shields.io/badge/Branch-main-green?style=flat-square&logo=git)](https://github.com/)
