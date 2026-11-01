@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Users, 
   HelpCircle, 
@@ -49,7 +49,7 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
   const [expandedVendorId, setExpandedVendorId] = useState<string | null>(vendors[0]?.id || null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
-  const categories = Array.from(new Set(vendors.map((v) => v.category)));
+  const categories = useMemo(() => Array.from(new Set(vendors.map((v) => v.category))), [vendors]);
 
   const handleToggleChecklist = (vendorId: string, itemIdx: number) => {
     const updated = vendors.map((v) => {
@@ -76,9 +76,11 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
     onUpdateVendors(updated);
   };
 
-  const filteredVendors = filterCategory === 'all'
-    ? vendors
-    : vendors.filter((v) => v.category === filterCategory);
+  const filteredVendors = useMemo(() => {
+    return filterCategory === 'all'
+      ? vendors
+      : vendors.filter((v) => v.category === filterCategory);
+  }, [vendors, filterCategory]);
 
   return (
     <div className="space-y-6">
@@ -136,8 +138,18 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
             >
               {/* Header Strip */}
               <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
                 onClick={() => setExpandedVendorId(isExpanded ? null : vendor.id)}
-                className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/60 transition-colors"
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    setExpandedVendorId(isExpanded ? null : vendor.id);
+                  }
+                }}
+                className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/60 transition-colors focus:outline-hidden focus:ring-2 focus:ring-indigo-500 rounded-t-xl"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -181,7 +193,11 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
                     </select>
                   </div>
 
-                  <button className="text-slate-400 p-1 rounded-md hover:bg-slate-100">
+                  <button
+                    type="button"
+                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${vendor.vendorName}`}
+                    className="text-slate-400 p-1 rounded-md hover:bg-slate-100"
+                  >
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                 </div>

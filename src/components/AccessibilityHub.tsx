@@ -77,8 +77,18 @@ export const AccessibilityHub: React.FC<AccessibilityHubProps> = ({
         {items.map((item) => (
           <div
             key={item.id}
+            role="checkbox"
+            aria-checked={item.isChecked}
+            tabIndex={0}
             onClick={() => onToggleItem(item.id)}
-            className={`p-4 rounded-lg border transition-all cursor-pointer flex items-start gap-3 ${
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                onToggleItem(item.id);
+              }
+            }}
+            className={`p-4 rounded-lg border transition-all cursor-pointer flex items-start gap-3 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 ${
               item.isChecked
                 ? 'bg-emerald-50/40 border-emerald-200 shadow-xs'
                 : 'bg-white border-slate-200 hover:border-slate-300'

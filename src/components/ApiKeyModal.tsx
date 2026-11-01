@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Key, ShieldCheck, Check, Info, ExternalLink, AlertTriangle } from 'lucide-react';
 import { getStoredApiKey, saveApiKey } from '../services/geminiApi';
 import { isValidApiKeyFormat } from '../utils/validation';
@@ -14,11 +14,29 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   onClose,
   onKeySaved,
 }) => {
-  if (!isOpen) return null;
-
   const [keyInput, setKeyInput] = useState(getStoredApiKey());
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setKeyInput(getStoredApiKey());
+    setErrorMessage(null);
+    setSavedSuccess(false);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +70,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="api-key-modal-title"
+    >
       <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
@@ -61,7 +84,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               <Key className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-900">Google Gemini API Configuration</h3>
+              <h3 id="api-key-modal-title" className="font-bold text-sm text-slate-900">Google Gemini API Configuration</h3>
               <p className="text-[11px] text-slate-500">Connect for live AI-powered responses</p>
             </div>
           </div>
@@ -131,7 +154,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
           <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Stored strictly in your local browser storage. Never transmitted to any third party.</span>
+            <span>Stored in your browser. When you use live Gemini features, the key and request are sent directly to Google.</span>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">

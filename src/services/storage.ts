@@ -2,7 +2,7 @@ import { FullEventPlan } from '../types/event';
 import { PRESET_EVENTS, getPresetPlan } from '../data/presetTemplates';
 import { validateAndSanitizePlan } from '../utils/validation';
 
-const PLAN_STORAGE_KEY = 'planora_active_event_plan';
+export const PLAN_STORAGE_KEY = 'planora_active_event_plan';
 
 export function loadSavedPlan(): FullEventPlan {
   try {

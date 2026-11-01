@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Clock, 
   Calendar, 
@@ -59,14 +59,19 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({
     category: 'General',
   });
 
-  const completedCount = timeline.filter((t) => t.status === 'completed').length;
-  const progressPercent = timeline.length > 0 ? Math.round((completedCount / timeline.length) * 100) : 0;
+  const { completedCount, progressPercent } = useMemo(() => {
+    const completed = timeline.filter((t) => t.status === 'completed').length;
+    const pct = timeline.length > 0 ? Math.round((completed / timeline.length) * 100) : 0;
+    return { completedCount: completed, progressPercent: pct };
+  }, [timeline]);
 
-  const filteredTasks = timeline.filter((task) => {
-    const phaseMatch = selectedPhase === 'all' || task.phase === selectedPhase;
-    const priorityMatch = selectedPriority === 'all' || task.priority === selectedPriority;
-    return phaseMatch && priorityMatch;
-  });
+  const filteredTasks = useMemo(() => {
+    return timeline.filter((task) => {
+      const phaseMatch = selectedPhase === 'all' || task.phase === selectedPhase;
+      const priorityMatch = selectedPriority === 'all' || task.priority === selectedPriority;
+      return phaseMatch && priorityMatch;
+    });
+  }, [timeline, selectedPhase, selectedPriority]);
 
   const handleToggleTaskStatus = (id: string) => {
     const nextStatusMap: Record<TaskStatus, TaskStatus> = {

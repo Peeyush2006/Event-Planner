@@ -135,7 +135,7 @@ export interface ChatMessage {
   timestamp: string;
   suggestedAction?: {
     type: 'add_task' | 'add_budget' | 'apply_theme';
-    payload: any;
+    payload: Record<string, unknown>;
     label: string;
   };
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   X, 
   Sparkles, 
@@ -41,8 +41,6 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
   onPlanCreated,
   currentDetails,
 }) => {
-  if (!isOpen) return null;
-
   const [eventType, setEventType] = useState<EventType>(currentDetails?.type || 'wedding');
   const [title, setTitle] = useState(currentDetails?.title || '');
   const [date, setDate] = useState(currentDetails?.date || new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
@@ -55,6 +53,33 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
   
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setEventType(currentDetails?.type || 'wedding');
+    setTitle(currentDetails?.title || '');
+    setDate(currentDetails?.date || new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    setLocation(currentDetails?.location || 'Central Park Conservatory, NY');
+    setGuestCount(currentDetails?.guestCount || 100);
+    setBudget(currentDetails?.totalBudget || 25000);
+    setCurrency(currentDetails?.currency || 'USD');
+    setVibe(currentDetails?.vibe || 'classic-elegant');
+    setNotes(currentDetails?.notes || '');
+    setErrorMsg(null);
+  }, [isOpen, currentDetails]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   const feasibility = analyzeBudgetFeasibility(eventType, budget, guestCount);
 
@@ -95,15 +120,21 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
       const { plan } = await generateAiEventPlan(details);
       onPlanCreated(plan);
       onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to generate plan.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to generate plan.';
+      setErrorMsg(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wizard-modal-title"
+    >
       <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden my-8">
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-200 bg-white flex items-center justify-between">
@@ -112,7 +143,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 id="wizard-modal-title" className="text-base font-bold text-slate-900">
                 {currentDetails ? 'Edit Event Parameters' : 'Create New GenAI Event Plan'}
               </h2>
               <p className="text-xs text-slate-500">

@@ -7,7 +7,7 @@ const REQUEST_TIMEOUT_MS = 15000;
 
 export function getStoredApiKey(): string {
   try {
-    const stored = localStorage.getItem(API_KEY_STORAGE_KEY) || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    const stored = localStorage.getItem(API_KEY_STORAGE_KEY) || import.meta.env.VITE_GEMINI_API_KEY || '';
     if (stored && isValidApiKeyFormat(stored)) {
       return stored;
     }
@@ -52,6 +52,30 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = R
     return response;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * Safely extracts JSON from raw LLM output, stripping markdown code blocks if present
+ */
+export function extractJsonFromText(rawText: string): unknown {
+  const trimmed = rawText.trim();
+  const cleaned = trimmed
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/, '')
+    .replace(/```\s*$/, '')
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const substring = cleaned.substring(firstBrace, lastBrace + 1);
+      return JSON.parse(substring);
+    }
+    throw new Error('Failed to parse JSON from AI response');
   }
 }
 
@@ -180,7 +204,7 @@ CRITICAL: Return ONLY a valid JSON object matching this structure with no conver
     const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!rawText) throw new Error('No content returned from Gemini');
 
-    const parsed = JSON.parse(rawText);
+    const parsed = extractJsonFromText(rawText) as Record<string, unknown>;
     const sanitizedPlan = validateAndSanitizePlan({
       details,
       budget: parsed.budget,
@@ -282,7 +306,7 @@ Answer the user's question clearly, constructively, and formatted in clean markd
 /**
  * High-quality offline conversational planner response engine
  */
-function generateOfflineChatResponse(plan: FullEventPlan, prompt: string): string {
+export function generateOfflineChatResponse(plan: FullEventPlan, prompt: string): string {
   const lower = prompt.toLowerCase();
   const currency = plan.details.currency;
   const budget = plan.details.totalBudget;

@@ -1,6 +1,7 @@
 import {
   EventDetails,
   BudgetItem,
+  BudgetCategory,
   TimelineTask,
   VendorItem,
   PersonalizedIdea,
@@ -33,7 +34,7 @@ export function generateBudgetItems(details: EventDetails): BudgetItem[] {
   const G = Math.max(1, details.guestCount);
   const type = details.type;
 
-  let items: { cat: any; name: string; pct: number; notes: string }[] = [];
+  let items: { cat: BudgetCategory; name: string; pct: number; notes: string }[] = [];
 
   if (type === 'wedding') {
     items = [

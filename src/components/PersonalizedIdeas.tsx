@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Palette, 
   Utensils, 
@@ -25,9 +25,11 @@ export const PersonalizedIdeas: React.FC<PersonalizedIdeasProps> = ({
     setTimeout(() => setCopiedHex(null), 2000);
   };
 
-  const filteredIdeas = activeCategory === 'all'
-    ? ideas
-    : ideas.filter((i) => i.category === activeCategory);
+  const filteredIdeas = useMemo(() => {
+    return activeCategory === 'all'
+      ? ideas
+      : ideas.filter((i) => i.category === activeCategory);
+  }, [ideas, activeCategory]);
 
   return (
     <div className="space-y-6">

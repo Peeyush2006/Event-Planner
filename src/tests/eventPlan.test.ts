@@ -15,8 +15,11 @@ import {
   isValidApiKeyFormat, 
   validateAndSanitizePlan 
 } from '../utils/validation';
-import { formatCurrency, calculateCountdown } from '../utils/formatters';
-import { EventDetails } from '../types/event';
+import { formatCurrency, formatDate, calculateCountdown } from '../utils/formatters';
+import { extractJsonFromText, getStoredApiKey, saveApiKey, generateOfflineChatResponse } from '../services/geminiApi';
+import { loadSavedPlan, savePlanToStorage, clearSavedPlan, PLAN_STORAGE_KEY } from '../services/storage';
+import { sanitizeFileName, generateBudgetCsvString } from '../services/exportUtils';
+import { BudgetItem, EventDetails } from '../types/event';
 
 describe('Validation & Security Utilities', () => {
   it('should validate complete event input correctly', () => {
@@ -43,6 +46,22 @@ describe('Validation & Security Utilities', () => {
     expect(invalid.errors.guestCount).toBeDefined();
     expect(invalid.errors.totalBudget).toBeDefined();
     expect(invalid.errors.date).toBeDefined();
+  });
+
+  it('should reject fractional guests, infinite values, invalid calendar dates, and oversized locations', () => {
+    const invalid = validateEventInput({
+      title: 'Community gathering',
+      guestCount: 2.5,
+      totalBudget: Number.POSITIVE_INFINITY,
+      date: '2026-02-30',
+      location: 'x'.repeat(201),
+    });
+
+    expect(invalid.isValid).toBe(false);
+    expect(invalid.errors.guestCount).toBeDefined();
+    expect(invalid.errors.totalBudget).toBeDefined();
+    expect(invalid.errors.date).toBeDefined();
+    expect(invalid.errors.location).toBeDefined();
   });
 
   it('should sanitize input text to protect against XSS injection', () => {
@@ -128,12 +147,37 @@ describe('Validation & Security Utilities', () => {
     }
   });
 
+  it('should safely bound non-finite values in imported plans', () => {
+    const plan = validateAndSanitizePlan({
+      details: { guestCount: 'Infinity', totalBudget: 'NaN', date: '2026-02-30' },
+      budget: [{ estimatedCost: 'Infinity', actualCost: -4 }],
+    });
+
+    expect(plan?.details.guestCount).toBe(1);
+    expect(plan?.details.totalBudget).toBe(0);
+    expect(plan?.budget[0].estimatedCost).toBe(0);
+    expect(plan?.budget[0].actualCost).toBe(0);
+    expect(plan?.details.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
   it('should warn when per-guest budget is unrealistically low', () => {
     // $2,000 for 100 wedding guests = $20/head (unfeasible)
     const result = analyzeBudgetFeasibility('wedding', 2000, 100);
     expect(result.isFeasible).toBe(false);
     expect(result.warning).toBeDefined();
     expect(result.advice).toBeDefined();
+  });
+});
+
+describe('AI response parsing', () => {
+  it('parses plain JSON and fenced JSON', () => {
+    expect(extractJsonFromText('{"ok":true}')).toEqual({ ok: true });
+    expect(extractJsonFromText('```json\n{"ok":true}\n```')).toEqual({ ok: true });
+  });
+
+  it('extracts a JSON object surrounded by explanatory text and rejects invalid output', () => {
+    expect(extractJsonFromText('Result: {"ok":true} done')).toEqual({ ok: true });
+    expect(() => extractJsonFromText('not JSON')).toThrow('Failed to parse JSON from AI response');
   });
 });
 
@@ -255,13 +299,162 @@ describe('Formatting Utilities', () => {
     expect(formatCurrency(2500, 'USD')).toBe('$2,500');
     expect(formatCurrency(50000, 'INR')).toBe('₹50,000');
     expect(formatCurrency(1200.5, 'EUR')).toBe('€1,200.5');
+    expect(formatCurrency(0, 'GBP')).toBe('£0');
+    expect(formatCurrency(750, 'CAD')).toBe('CA$750');
+    expect(formatCurrency(900, 'AUD')).toBe('A$900');
   });
 
-  it('computes countdown accurately', () => {
+  it('formats dates consistently without timezone drift', () => {
+    expect(formatDate('')).toBe('Not set');
+    expect(formatDate('invalid-date')).toBe('invalid-date');
+    const formatted = formatDate('2026-11-20');
+    expect(formatted).toContain('2026');
+    expect(formatted).toContain('Nov');
+  });
+
+  it('computes countdown accurately for future, today, past and missing dates', () => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 45);
-    const countdown = calculateCountdown(futureDate.toISOString().split('T')[0]);
-    expect(countdown.isPast).toBe(false);
-    expect(countdown.totalDays).toBeGreaterThan(40);
+    const countdownFuture = calculateCountdown(futureDate.toISOString().split('T')[0]);
+    expect(countdownFuture.isPast).toBe(false);
+    expect(countdownFuture.totalDays).toBeGreaterThanOrEqual(44);
+
+    const nowIso = new Date().toISOString().split('T')[0];
+    const countdownToday = calculateCountdown(nowIso);
+    expect(countdownToday.isPast).toBe(false);
+    expect(countdownToday.totalDays).toBe(0);
+    expect(countdownToday.statusText).toBe('Today is the big day!');
+
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - 10);
+    const countdownPast = calculateCountdown(pastDate.toISOString().split('T')[0]);
+    expect(countdownPast.isPast).toBe(true);
+    expect(countdownPast.totalDays).toBe(10);
+    expect(countdownPast.statusText).toContain('days ago');
+
+    const countdownEmpty = calculateCountdown('');
+    expect(countdownEmpty.statusText).toBe('Date not set');
+  });
+});
+
+describe('Storage Service', () => {
+  it('loads fallback preset plan when storage is empty', () => {
+    localStorage.removeItem(PLAN_STORAGE_KEY);
+    const plan = loadSavedPlan();
+    expect(plan).toBeDefined();
+    expect(plan.details.title).toBeDefined();
+    expect(plan.budget.length).toBeGreaterThan(0);
+  });
+
+  it('saves and reloads a valid plan to localStorage', () => {
+    const sample = generateEventPlan(weddingDetails);
+    savePlanToStorage(sample);
+    const reloaded = loadSavedPlan();
+    expect(reloaded.details.title).toBe(sample.details.title);
+    expect(reloaded.details.totalBudget).toBe(sample.details.totalBudget);
+  });
+
+  it('handles corrupted JSON in storage gracefully without throwing', () => {
+    localStorage.setItem(PLAN_STORAGE_KEY, '{ invalid corrupted json');
+    const plan = loadSavedPlan();
+    expect(plan).toBeDefined();
+    expect(plan.details.title).toBeDefined();
+  });
+
+  it('clears saved plan from storage', () => {
+    localStorage.setItem(PLAN_STORAGE_KEY, 'some-data');
+    clearSavedPlan();
+    expect(localStorage.getItem(PLAN_STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe('Export Utilities', () => {
+  it('sanitizes export file names against path traversal and special characters', () => {
+    expect(sanitizeFileName('../../etc/passwd', 'fallback')).toBe('etc_passwd');
+    expect(sanitizeFileName('My Grand Wedding!!! 2026', 'fallback')).toBe('my_grand_wedding_2026');
+    expect(sanitizeFileName('', 'default_name')).toBe('default_name');
+  });
+
+  it('generates compliant CSV with formula neutralization and calculation difference', () => {
+    const sampleBudget: BudgetItem[] = [
+      {
+        id: 'b-1',
+        category: 'Venue & Rentals',
+        name: '=cmd|calc!A0',
+        estimatedCost: 5000,
+        actualCost: 4500,
+        status: 'deposit_paid',
+        notes: '@Formula injection attempt',
+      },
+      {
+        id: 'b-2',
+        category: 'Catering & Beverages',
+        name: 'Plated Dinner',
+        estimatedCost: 8000,
+        actualCost: 8200,
+        status: 'planned',
+      },
+    ];
+
+    const csv = generateBudgetCsvString(sampleBudget);
+    const lines = csv.split('\n');
+    expect(lines.length).toBe(3); // header + 2 items
+    expect(lines[0]).toContain('Category,Item Name,Estimated Cost,Actual Cost,Difference,Status,Notes');
+    // First item: formula must be sanitized with prepended single quote
+    expect(lines[1]).toContain('"\'=cmd|calc!A0"');
+    expect(lines[1]).toContain('500'); // diff 5000 - 4500
+    expect(lines[1]).toContain('"\'@Formula injection attempt"');
+    // Second item: diff 8000 - 8200 = -200
+    expect(lines[2]).toContain('-200');
+  });
+});
+
+describe('Gemini API Service & Offline Response Engine', () => {
+  it('manages API key storage and validation', () => {
+    saveApiKey('');
+    expect(getStoredApiKey()).toBe('');
+
+    const validKey = 'AIzaSyD-12345678901234567890abcdefg';
+    const saved = saveApiKey(validKey);
+    expect(saved).toBe(true);
+    expect(getStoredApiKey()).toBe(validKey);
+
+    const invalidSaved = saveApiKey('too-short');
+    expect(invalidSaved).toBe(false);
+
+    // Clean up
+    saveApiKey('');
+  });
+
+  it('extracts JSON cleanly from markdown code blocks and raw text', () => {
+    const rawPlain = '{"test": 123}';
+    expect(extractJsonFromText(rawPlain)).toEqual({ test: 123 });
+
+    const rawFenced = '```json\n{"status": "ok", "count": 5}\n```';
+    expect(extractJsonFromText(rawFenced)).toEqual({ status: 'ok', count: 5 });
+
+    const rawWithCommentary = 'Here is your event plan:\n{"title": "Birthday Party"}\nHope this helps!';
+    expect(extractJsonFromText(rawWithCommentary)).toEqual({ title: 'Birthday Party' });
+
+    expect(() => extractJsonFromText('No json object here')).toThrow();
+  });
+
+  it('synthesizes intelligent domain responses in offline chat mode for various topics', () => {
+    const plan = generateEventPlan(weddingDetails);
+
+    const budgetReply = generateOfflineChatResponse(plan, 'How can I save budget or cut costs?');
+    expect(budgetReply).toContain('Cost-Saving Recommendations');
+    expect(budgetReply).toContain('Catering Strategy');
+
+    const vendorReply = generateOfflineChatResponse(plan, 'What vendor contract red flags should I watch for?');
+    expect(vendorReply).toContain('Vendor Contract');
+    expect(vendorReply).toContain('Force Majeure');
+
+    const timelineReply = generateOfflineChatResponse(plan, 'Can you review our day-of schedule and timeline?');
+    expect(timelineReply).toContain('Run-of-Show Protocol');
+    expect(timelineReply).toContain('Buffer Times');
+
+    const generalReply = generateOfflineChatResponse(plan, 'What are some general tips?');
+    expect(generalReply).toContain('Planora Planning Director Recommendations');
   });
 });

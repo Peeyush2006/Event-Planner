@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   Calendar, 
   MapPin, 
@@ -33,25 +33,40 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const countdown = calculateCountdown(details.date);
 
   // Financial Calculations
-  const totalEstimated = budget.reduce((sum, item) => sum + (Number(item.estimatedCost) || 0), 0);
-  const totalActual = budget.reduce((sum, item) => sum + (Number(item.actualCost) || 0), 0);
-  const remainingBudget = details.totalBudget - totalActual;
-  const isOverBudget = totalActual > details.totalBudget;
+  const { totalEstimated, totalActual, remainingBudget, isOverBudget } = useMemo(() => {
+    let est = 0;
+    let act = 0;
+    for (const item of budget) {
+      est += Number(item.estimatedCost) || 0;
+      act += Number(item.actualCost) || 0;
+    }
+    return {
+      totalEstimated: est,
+      totalActual: act,
+      remainingBudget: details.totalBudget - act,
+      isOverBudget: act > details.totalBudget,
+    };
+  }, [budget, details.totalBudget]);
 
   // Task Progress Calculations
-  const completedTasks = timeline.filter((t) => t.status === 'completed').length;
-  const totalTasks = timeline.length;
-  const taskProgressPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const { completedTasks, totalTasks, taskProgressPct, nextTask } = useMemo(() => {
+    const completed = timeline.filter((t) => t.status === 'completed').length;
+    const total = timeline.length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const next = timeline.find((t) => t.status !== 'completed');
+    return { completedTasks: completed, totalTasks: total, taskProgressPct: pct, nextTask: next };
+  }, [timeline]);
 
   // Accessibility Progress
-  const completedAcc = accessibility.filter((a) => a.isChecked).length;
-  const totalAcc = accessibility.length;
-
-  // Next Pending Task
-  const nextTask = timeline.find((t) => t.status !== 'completed');
+  const { completedAcc, totalAcc } = useMemo(() => {
+    const completed = accessibility.filter((a) => a.isChecked).length;
+    return { completedAcc: completed, totalAcc: accessibility.length };
+  }, [accessibility]);
 
   // Feasibility Check
-  const feasibility = analyzeBudgetFeasibility(details.type, details.totalBudget, details.guestCount);
+  const feasibility = useMemo(() => {
+    return analyzeBudgetFeasibility(details.type, details.totalBudget, details.guestCount);
+  }, [details.type, details.totalBudget, details.guestCount]);
 
   return (
     <div className="space-y-6">

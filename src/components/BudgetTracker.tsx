@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   DollarSign, 
   Plus, 
@@ -64,24 +64,38 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
     notes: '',
   });
 
-  const totalEstimated = budget.reduce((sum, item) => sum + (Number(item.estimatedCost) || 0), 0);
-  const totalActual = budget.reduce((sum, item) => sum + (Number(item.actualCost) || 0), 0);
-  const remaining = totalBudget - totalActual;
-  const isOverBudget = totalActual > totalBudget;
+  const { totalEstimated, totalActual, remaining, isOverBudget, categoryTotals } = useMemo(() => {
+    let est = 0;
+    let act = 0;
+    const totals: Record<string, { estimated: number; actual: number }> = {};
 
-  // Category Summaries
-  const categoryTotals: Record<string, { estimated: number; actual: number }> = {};
-  budget.forEach((item) => {
-    if (!categoryTotals[item.category]) {
-      categoryTotals[item.category] = { estimated: 0, actual: 0 };
+    for (const item of budget) {
+      const e = Number(item.estimatedCost) || 0;
+      const a = Number(item.actualCost) || 0;
+      est += e;
+      act += a;
+
+      if (!totals[item.category]) {
+        totals[item.category] = { estimated: 0, actual: 0 };
+      }
+      totals[item.category].estimated += e;
+      totals[item.category].actual += a;
     }
-    categoryTotals[item.category].estimated += Number(item.estimatedCost) || 0;
-    categoryTotals[item.category].actual += Number(item.actualCost) || 0;
-  });
 
-  const filteredBudget = selectedCategory === 'all'
-    ? budget
-    : budget.filter((b) => b.category === selectedCategory);
+    return {
+      totalEstimated: est,
+      totalActual: act,
+      remaining: totalBudget - act,
+      isOverBudget: act > totalBudget,
+      categoryTotals: totals,
+    };
+  }, [budget, totalBudget]);
+
+  const filteredBudget = useMemo(() => {
+    return selectedCategory === 'all'
+      ? budget
+      : budget.filter((b) => b.category === selectedCategory);
+  }, [budget, selectedCategory]);
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();

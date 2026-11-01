@@ -5,7 +5,7 @@ import { sanitizeForCsv } from '../utils/validation';
  * Safely sanitizes a string for use in downloaded filenames
  * Prevents directory traversal and control characters
  */
-function sanitizeFileName(name: string, fallback: string): string {
+export function sanitizeFileName(name: string, fallback: string): string {
   const safe = name
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '_')
@@ -14,7 +14,10 @@ function sanitizeFileName(name: string, fallback: string): string {
   return safe || fallback;
 }
 
-export function exportBudgetToCsv(budget: BudgetItem[], eventTitle: string): void {
+/**
+ * Generates an RFC 4180-compliant CSV string with OWASP injection protection
+ */
+export function generateBudgetCsvString(budget: BudgetItem[]): string {
   const headers = ['Category', 'Item Name', 'Estimated Cost', 'Actual Cost', 'Difference', 'Status', 'Notes'];
   
   const rows = budget.map((b) => {
@@ -30,7 +33,11 @@ export function exportBudgetToCsv(budget: BudgetItem[], eventTitle: string): voi
     ];
   });
 
-  const csvContent = [headers.map(sanitizeForCsv).join(','), ...rows.map((r) => r.join(','))].join('\n');
+  return [headers.map(sanitizeForCsv).join(','), ...rows.map((r) => r.join(','))].join('\n');
+}
+
+export function exportBudgetToCsv(budget: BudgetItem[], eventTitle: string): void {
+  const csvContent = generateBudgetCsvString(budget);
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   
