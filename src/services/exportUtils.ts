@@ -10,6 +10,7 @@ export function sanitizeFileName(name: string, fallback: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, '_')
     .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
     .slice(0, 50);
   return safe || fallback;
 }

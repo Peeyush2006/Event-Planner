@@ -21,6 +21,64 @@ import { loadSavedPlan, savePlanToStorage, clearSavedPlan, PLAN_STORAGE_KEY } fr
 import { sanitizeFileName, generateBudgetCsvString } from '../services/exportUtils';
 import { BudgetItem, EventDetails } from '../types/event';
 
+// Polyfill localStorage for node/vitest environment
+const mockStorage: Record<string, string> = {};
+const localStoragePolyfill = {
+  getItem: (key: string) => mockStorage[key] ?? null,
+  setItem: (key: string, val: string) => {
+    mockStorage[key] = String(val);
+  },
+  removeItem: (key: string) => {
+    delete mockStorage[key];
+  },
+  clear: () => {
+    for (const k in mockStorage) delete mockStorage[k];
+  },
+};
+
+if (typeof globalThis.localStorage === 'undefined') {
+  (globalThis as unknown as { localStorage: typeof localStoragePolyfill }).localStorage = localStoragePolyfill;
+}
+
+const weddingDetails: EventDetails = {
+  id: 'test-wedding',
+  title: 'Autumn Vows',
+  type: 'wedding',
+  date: '2026-10-15',
+  location: 'Estate Gardens',
+  guestCount: 120,
+  totalBudget: 30000,
+  currency: 'USD',
+  vibe: 'rustic-outdoor',
+  createdAt: '2026-10-01T00:00:00Z',
+};
+
+const birthdayDetails: EventDetails = {
+  id: 'test-bday',
+  title: 'David 30th Fiesta',
+  type: 'birthday',
+  date: '2026-11-05',
+  location: 'Rooftop Bar',
+  guestCount: 45,
+  totalBudget: 4000,
+  currency: 'USD',
+  vibe: 'colorful-festive',
+  createdAt: '2026-10-01T00:00:00Z',
+};
+
+const communityDetails: EventDetails = {
+  id: 'test-comm',
+  title: 'Spring Park Cleanup & Fair',
+  type: 'community',
+  date: '2026-10-28',
+  location: 'Highland Park',
+  guestCount: 300,
+  totalBudget: 6000,
+  currency: 'USD',
+  vibe: 'eco-friendly',
+  createdAt: '2026-10-01T00:00:00Z',
+};
+
 describe('Validation & Security Utilities', () => {
   it('should validate complete event input correctly', () => {
     const valid = validateEventInput({
@@ -182,45 +240,6 @@ describe('AI response parsing', () => {
 });
 
 describe('Heuristic AI Generation Engine for Verticals', () => {
-  const weddingDetails: EventDetails = {
-    id: 'test-wedding',
-    title: 'Autumn Vows',
-    type: 'wedding',
-    date: '2026-10-15',
-    location: 'Estate Gardens',
-    guestCount: 120,
-    totalBudget: 30000,
-    currency: 'USD',
-    vibe: 'rustic-outdoor',
-    createdAt: '2026-10-01T00:00:00Z',
-  };
-
-  const birthdayDetails: EventDetails = {
-    id: 'test-bday',
-    title: 'David 30th Fiesta',
-    type: 'birthday',
-    date: '2026-11-05',
-    location: 'Rooftop Bar',
-    guestCount: 45,
-    totalBudget: 4000,
-    currency: 'USD',
-    vibe: 'colorful-festive',
-    createdAt: '2026-10-01T00:00:00Z',
-  };
-
-  const communityDetails: EventDetails = {
-    id: 'test-comm',
-    title: 'Spring Park Cleanup & Fair',
-    type: 'community',
-    date: '2026-10-28',
-    location: 'Highland Park',
-    guestCount: 300,
-    totalBudget: 6000,
-    currency: 'USD',
-    vibe: 'eco-friendly',
-    createdAt: '2026-10-01T00:00:00Z',
-  };
-
   it('should generate tailored budget items for Wedding vertical', () => {
     const budget = generateBudgetItems(weddingDetails);
     expect(budget.length).toBeGreaterThan(5);
@@ -399,7 +418,7 @@ describe('Export Utilities', () => {
     const csv = generateBudgetCsvString(sampleBudget);
     const lines = csv.split('\n');
     expect(lines.length).toBe(3); // header + 2 items
-    expect(lines[0]).toContain('Category,Item Name,Estimated Cost,Actual Cost,Difference,Status,Notes');
+    expect(lines[0]).toContain('"Category","Item Name","Estimated Cost","Actual Cost","Difference","Status","Notes"');
     // First item: formula must be sanitized with prepended single quote
     expect(lines[1]).toContain('"\'=cmd|calc!A0"');
     expect(lines[1]).toContain('500'); // diff 5000 - 4500
@@ -447,14 +466,14 @@ describe('Gemini API Service & Offline Response Engine', () => {
     expect(budgetReply).toContain('Catering Strategy');
 
     const vendorReply = generateOfflineChatResponse(plan, 'What vendor contract red flags should I watch for?');
-    expect(vendorReply).toContain('Vendor Contract');
+    expect(vendorReply).toContain('Vendor Negotiation');
     expect(vendorReply).toContain('Force Majeure');
 
     const timelineReply = generateOfflineChatResponse(plan, 'Can you review our day-of schedule and timeline?');
-    expect(timelineReply).toContain('Run-of-Show Protocol');
-    expect(timelineReply).toContain('Buffer Times');
+    expect(timelineReply).toContain('Recommended Day-Of Flow');
+    expect(timelineReply).toContain('Vendor load-in');
 
     const generalReply = generateOfflineChatResponse(plan, 'What are some general tips?');
-    expect(generalReply).toContain('Planora Planning Director Recommendations');
+    expect(generalReply).toContain('Planora Assistant Insights');
   });
 });
