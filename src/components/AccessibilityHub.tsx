@@ -54,13 +54,11 @@ export const AccessibilityHub: React.FC<AccessibilityHubProps> = ({
           </p>
         </div>
 
-        {/* Score Badge */}
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl">
-          <span className="text-xs font-semibold text-emerald-800">Inclusivity Score:</span>
-          <span className="text-sm font-bold text-emerald-700">
-            {verifiedCount}/{totalCount} ({scorePercent}%)
-          </span>
-        </div>
+        {/* Inline Score */}
+        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+          <span className="font-bold text-slate-900">{verifiedCount}/{totalCount}</span> verified{' '}
+          <span className="text-slate-400">({scorePercent}%)</span>
+        </p>
       </div>
 
       {/* Educational Advisory Callout */}
@@ -80,7 +78,7 @@ export const AccessibilityHub: React.FC<AccessibilityHubProps> = ({
           <div
             key={item.id}
             onClick={() => onToggleItem(item.id)}
-            className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+            className={`p-4 rounded-lg border transition-all cursor-pointer flex items-start gap-3 ${
               item.isChecked
                 ? 'bg-emerald-50/40 border-emerald-200 shadow-xs'
                 : 'bg-white border-slate-200 hover:border-slate-300'
@@ -96,9 +94,11 @@ export const AccessibilityHub: React.FC<AccessibilityHubProps> = ({
 
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                <span className="flex items-center gap-1.5">
                   {getCategoryIcon(item.category)}
-                  {item.category}
+                  <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                    {item.category}
+                  </span>
                 </span>
 
                 <span

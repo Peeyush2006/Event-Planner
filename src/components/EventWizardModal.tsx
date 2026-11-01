@@ -9,7 +9,9 @@ import {
   MapPin, 
   AlertTriangle,
   HeartHandshake,
-  Check
+  Check,
+  Wand2,
+  Loader2
 } from 'lucide-react';
 import { EventDetails, EventType, EventVibe, CurrencyCode, FullEventPlan } from '../types/event';
 import { validateEventInput, analyzeBudgetFeasibility, sanitizeText } from '../utils/validation';
@@ -102,25 +104,25 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <div className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden my-8">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
+        <div className="p-6 border-b border-slate-200 bg-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+              <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-slate-900">
                 {currentDetails ? 'Edit Event Parameters' : 'Create New GenAI Event Plan'}
               </h2>
-              <p className="text-xs text-indigo-200">
-                Planora AI will tailor budgets, timelines, checklists & ideas to this context.
+              <p className="text-xs text-slate-500">
+                Fill in your event details to generate a personalized planning suite.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -130,7 +132,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -176,8 +178,8 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Maya & Julian’s Botanical Wedding"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-800"
+                placeholder="e.g. Maya & Julian's Botanical Wedding"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800"
               />
             </div>
             <div>
@@ -187,7 +189,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. Sonoma Valley Winery, CA"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-800"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800"
               />
             </div>
           </div>
@@ -201,7 +203,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-800"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800"
               />
             </div>
 
@@ -214,7 +216,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
                 required
                 value={guestCount}
                 onChange={(e) => setGuestCount(parseInt(e.target.value) || 1)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-800"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800"
               />
             </div>
 
@@ -224,7 +226,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-                  className="bg-slate-100 border border-slate-300 rounded-xl px-2 py-2 text-slate-700 font-semibold"
+                  className="bg-slate-100 border border-slate-300 rounded-lg px-2 py-2 text-slate-700 font-semibold"
                 >
                   <option value="USD">$</option>
                   <option value="EUR">€</option>
@@ -240,7 +242,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
                   required
                   value={budget}
                   onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-800"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800"
                 />
               </div>
             </div>
@@ -248,7 +250,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
 
           {/* Feasibility Alert */}
           {!feasibility.isFeasible && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-1">
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 space-y-1">
               <p className="font-semibold">{feasibility.warning}</p>
               <p className="text-[11px] text-amber-800">{feasibility.advice}</p>
             </div>
@@ -269,8 +271,8 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
                       : 'border-slate-200 hover:bg-slate-50 text-slate-700'
                   }`}
                 >
-                  <div className="font-bold text-[11px]">{v.label}</div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">{v.desc}</div>
+                  <div className="font-bold text-xs">{v.label}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{v.desc}</div>
                 </button>
               ))}
             </div>
@@ -286,7 +288,7 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Outdoor garden setting with gluten-free options and acoustic live band for cocktail hour."
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-800"
+              className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800"
             />
           </div>
 
@@ -307,12 +309,12 @@ export const EventWizardModal: React.FC<EventWizardModalProps> = ({
             >
               {isLoading ? (
                 <>
-                  <Sparkles className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Generating AI Plan...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <Wand2 className="w-4 h-4" />
                   <span>Generate Complete Plan</span>
                 </>
               )}

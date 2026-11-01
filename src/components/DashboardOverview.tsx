@@ -11,7 +11,8 @@ import {
   ShieldCheck, 
   ArrowRight,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Lightbulb
 } from 'lucide-react';
 import { FullEventPlan } from '../types/event';
 import { formatCurrency, formatDate, calculateCountdown } from '../utils/formatters';
@@ -55,37 +56,36 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   return (
     <div className="space-y-6">
       {/* Event Hero Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-indigo-900/50">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="relative overflow-hidden rounded-xl bg-white border border-slate-200 border-l-4 border-l-indigo-600 p-6 sm:p-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
                 {details.type}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
                 Vibe: {details.vibe.replace('-', ' ')}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 {countdown.statusText}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               {details.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-slate-300">
+            <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-slate-500">
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-indigo-400" />
+                <Calendar className="w-4 h-4 text-slate-400" />
                 <span>{formatDate(details.date)}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-indigo-400" />
+                <MapPin className="w-4 h-4 text-slate-400" />
                 <span>{details.location}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-indigo-400" />
+                <Users className="w-4 h-4 text-slate-400" />
                 <span>{details.guestCount} Invited Guests</span>
               </div>
             </div>
@@ -95,13 +95,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={onOpenWizard}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-xs sm:text-sm border border-white/20 transition-all cursor-pointer backdrop-blur-xs"
+              className="px-4 py-2 rounded-lg bg-white text-slate-700 font-medium text-xs sm:text-sm border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer"
             >
               Edit Parameters
             </button>
             <button
               onClick={() => onNavigateTab('chat')}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               <span>Ask Planora AI</span>
@@ -112,7 +112,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
       {/* Advisory Warning Banner if Feasibility is Low */}
       {!feasibility.isFeasible && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-900 flex items-start gap-3">
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-amber-900 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-1 text-sm">
             <p className="font-semibold text-amber-950">{feasibility.warning}</p>
@@ -124,7 +124,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Budget */}
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-indigo-300 transition-colors">
+        <div className="p-5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50/50 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Total Budget
@@ -144,7 +144,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
 
         {/* Expenses & Variance */}
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-indigo-300 transition-colors">
+        <div className="p-5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50/50 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Actual Spent
@@ -166,7 +166,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
 
         {/* Milestone Tasks Progress */}
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-indigo-300 transition-colors">
+        <div className="p-5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50/50 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Timeline Progress
@@ -192,7 +192,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
 
         {/* Accessibility & Safety Score */}
-        <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-indigo-300 transition-colors">
+        <div className="p-5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50/50 transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Accessibility Audit
@@ -221,7 +221,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       {/* Action Centers */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Next Key Priority Milestone */}
-        <div className="lg:col-span-2 rounded-2xl bg-white border border-slate-200 p-6 shadow-xs">
+        <div className="lg:col-span-2 rounded-xl bg-white border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-indigo-600" />
@@ -237,7 +237,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           {nextTask ? (
-            <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-4 space-y-2">
+            <div className="rounded-lg bg-slate-50 border border-slate-200/80 p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">
                   {nextTask.phaseLabel}
@@ -250,8 +250,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <p className="text-sm text-slate-600 leading-relaxed">{nextTask.description}</p>
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-500 text-sm">
-              🎉 All planned milestones are completed!
+            <div className="text-center py-8 text-slate-500 text-sm flex flex-col items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <span>All milestones complete — your event is fully planned.</span>
             </div>
           )}
 
@@ -259,43 +260,43 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               onClick={() => onNavigateTab('budget')}
-              className="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
+              className="p-3 rounded-md bg-slate-50 hover:bg-slate-100 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
             >
-              <DollarSign className="w-4 h-4 text-indigo-500" />
+              <DollarSign className="w-4 h-4 text-slate-500" />
               Manage Budget
             </button>
             <button
               onClick={() => onNavigateTab('vendors')}
-              className="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
+              className="p-3 rounded-md bg-slate-50 hover:bg-slate-100 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
             >
-              <Users className="w-4 h-4 text-purple-500" />
+              <Users className="w-4 h-4 text-slate-500" />
               Vendor Checklist ({vendors.length})
             </button>
             <button
               onClick={() => onNavigateTab('ideas')}
-              className="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
+              className="p-3 rounded-md bg-slate-50 hover:bg-slate-100 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
             >
-              <Sparkles className="w-4 h-4 text-amber-500" />
+              <Sparkles className="w-4 h-4 text-slate-500" />
               Theme & Ideas
             </button>
             <button
               onClick={() => onNavigateTab('accessibility')}
-              className="p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
+              className="p-3 rounded-md bg-slate-50 hover:bg-slate-100 text-left transition-colors cursor-pointer text-xs font-semibold text-slate-700 flex flex-col gap-1"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <ShieldCheck className="w-4 h-4 text-slate-500" />
               Accessibility Hub
             </button>
           </div>
         </div>
 
-        {/* AI Planning Recommendations Sidebar */}
-        <div className="rounded-2xl bg-gradient-to-br from-indigo-50/60 to-purple-50/40 border border-indigo-100 p-6 flex flex-col justify-between shadow-xs">
+        {/* Planning Insights Sidebar */}
+        <div className="rounded-xl bg-slate-50 border border-slate-200 p-6 flex flex-col justify-between">
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-900 font-bold">
-              <Sparkles className="w-5 h-5 text-indigo-600" />
-              <h3>Planora AI Recommendations</h3>
+            <div className="flex items-center gap-2 text-slate-900 font-bold">
+              <Lightbulb className="w-5 h-5 text-indigo-600" />
+              <h3>Planning Insights</h3>
             </div>
-            <p className="text-xs text-indigo-950/80 leading-relaxed">
+            <p className="text-xs text-slate-500 leading-relaxed">
               Based on your {details.guestCount}-guest count and {details.vibe.replace('-', ' ')} aesthetic:
             </p>
 
@@ -323,7 +324,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
           <button
             onClick={() => onNavigateTab('chat')}
-            className="mt-6 w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer transition-colors"
+            className="mt-6 w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
           >
             <span>Ask Planora Anything</span>
             <ArrowRight className="w-3.5 h-3.5" />

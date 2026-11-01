@@ -12,7 +12,7 @@ import {
   ChevronUp, 
   DollarSign,
   ShieldAlert,
-  Sparkles
+  MessageSquare
 } from 'lucide-react';
 import { VendorItem, VendorStatus, CurrencyCode } from '../types/event';
 import { formatCurrency } from '../utils/formatters';
@@ -90,7 +90,7 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
             Vendor Checklists & Negotiation Matrix
           </h2>
           <p className="text-xs text-slate-500">
-            AI-generated interview questions, contract red flags, and milestone status tracking.
+            Interview questions & negotiation notes, contract red flags, and milestone status tracking.
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
           return (
             <div
               key={vendor.id}
-              className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:border-slate-300 transition-colors"
+              className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:border-slate-300 transition-colors"
             >
               {/* Header Strip */}
               <div
@@ -226,13 +226,13 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
                     ))}
                   </div>
 
-                  {/* AI Interview Questions & Red Flags */}
+                  {/* Interview Questions & Red Flags */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
                     {/* Questions */}
                     <div className="rounded-xl bg-white border border-indigo-100 p-4 space-y-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900">
-                        <Sparkles className="w-4 h-4 text-indigo-600" />
-                        <h4>AI Interview Questions to Ask Before Signing</h4>
+                        <MessageSquare className="w-4 h-4 text-indigo-600" />
+                        <h4>Interview Questions to Ask Before Signing</h4>
                       </div>
                       <ul className="space-y-1.5 text-xs text-slate-600">
                         {vendor.aiQuestionsToAsk.map((q, qIdx) => (
@@ -253,7 +253,7 @@ export const VendorChecklist: React.FC<VendorChecklistProps> = ({
                       <ul className="space-y-1.5 text-xs text-slate-600">
                         {vendor.redFlagsToWatch.map((rf, rfIdx) => (
                           <li key={rfIdx} className="flex items-start gap-1.5">
-                            <span className="text-rose-500 font-semibold">⚠️</span>
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
                             <span>{rf}</span>
                           </li>
                         ))}

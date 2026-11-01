@@ -8,7 +8,6 @@ import {
   ShieldCheck, 
   MessageSquare, 
   Download,
-  Share2,
   Check
 } from 'lucide-react';
 import { FullEventPlan, CurrencyCode, BudgetItem, TimelineTask, VendorItem } from './types/event';
@@ -104,7 +103,7 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl border border-slate-700 flex items-center gap-2 text-xs font-medium animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-md shadow-lg border border-slate-700 flex items-center gap-2 text-xs font-medium animate-fade-in">
           <Check className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -128,7 +127,7 @@ export const App: React.FC = () => {
         {/* Navigation Tabs Bar */}
         <nav
           aria-label="Event Sections"
-          className="bg-white rounded-2xl border border-slate-200 p-1.5 shadow-xs overflow-x-auto flex items-center gap-1"
+          className="bg-white rounded-lg border border-slate-200 p-1.5 overflow-x-auto flex items-center gap-1"
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -138,9 +137,9 @@ export const App: React.FC = () => {
                 onClick={() => setActiveTab(tab.id)}
                 role="tab"
                 aria-selected={isActive}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                    ? 'bg-indigo-600 text-white'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
@@ -219,19 +218,17 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-6 text-slate-500 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="mt-auto border-t border-slate-200 bg-white py-5 text-slate-500 text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">Planora AI</span>
-            <span>•</span>
-            <span>GenAI Event Planning Assistant</span>
-            <span>•</span>
-            <span className="text-indigo-600 font-medium">Weddings, Birthdays & Community Events</span>
+            <span className="font-semibold text-slate-800">Planora</span>
+            <span className="text-slate-300">—</span>
+            <span>Smart event planning for weddings, birthdays, and community gatherings</span>
           </div>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
             <span>WCAG AA Accessible</span>
             <span>Zero-Server Privacy</span>
-            <span>Single Branch main</span>
+            <span>© 2026 Planora</span>
           </div>
         </div>
       </footer>

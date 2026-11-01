@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   Palette, 
   Utensils, 
-  PartyPopper, 
-  Check, 
-  Copy, 
-  GlassWater, 
   Tag, 
   Lightbulb 
 } from 'lucide-react';
@@ -40,11 +35,11 @@ export const PersonalizedIdeas: React.FC<PersonalizedIdeasProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600" />
+            <Palette className="w-5 h-5 text-indigo-600" />
             Curated Themes, Menus & Creative Concepts
           </h2>
           <p className="text-xs text-slate-500">
-            AI-designed aesthetic palettes, interactive guest experiences, and signature menus.
+            Curated themes, menus, and creative concepts for your event
           </p>
         </div>
 
@@ -54,7 +49,7 @@ export const PersonalizedIdeas: React.FC<PersonalizedIdeasProps> = ({
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-full font-medium transition-colors uppercase tracking-wider text-[11px] shrink-0 ${
+              className={`px-3 py-1.5 rounded-full font-medium transition-colors text-xs shrink-0 ${
                 activeCategory === cat
                   ? 'bg-indigo-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -71,11 +66,11 @@ export const PersonalizedIdeas: React.FC<PersonalizedIdeasProps> = ({
         {filteredIdeas.map((idea) => (
           <div
             key={idea.id}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between hover:border-indigo-300 transition-colors"
+            className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between hover:border-indigo-300 transition-colors"
           >
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
                   {idea.category}
                 </span>
 
@@ -131,7 +126,7 @@ export const PersonalizedIdeas: React.FC<PersonalizedIdeasProps> = ({
                   <span className="text-xs font-semibold text-slate-700 block">
                     Key Highlights & Recipes:
                   </span>
-                  <ul className="space-y-1.5 text-xs text-slate-600 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                  <ul className="space-y-1.5 text-xs text-slate-600 bg-slate-50 rounded-lg p-3 border border-slate-100">
                     {idea.suggestedItems.map((item, idx) => (
                       <li key={idx} className="flex items-start gap-2">
                         <span className="text-indigo-500 font-bold">•</span>

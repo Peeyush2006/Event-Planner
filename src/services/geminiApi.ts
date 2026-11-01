@@ -1,25 +1,57 @@
 import { EventDetails, FullEventPlan, ChatMessage } from '../types/event';
 import { generateEventPlan } from './heuristicEngine';
+import { isValidApiKeyFormat, sanitizeText, validateAndSanitizePlan } from '../utils/validation';
 
 const API_KEY_STORAGE_KEY = 'planora_gemini_api_key';
+const REQUEST_TIMEOUT_MS = 15000;
 
 export function getStoredApiKey(): string {
   try {
-    return localStorage.getItem(API_KEY_STORAGE_KEY) || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    const stored = localStorage.getItem(API_KEY_STORAGE_KEY) || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    if (stored && isValidApiKeyFormat(stored)) {
+      return stored;
+    }
+    return '';
   } catch {
     return '';
   }
 }
 
-export function saveApiKey(key: string): void {
+export function saveApiKey(key: string): boolean {
   try {
-    if (key.trim()) {
-      localStorage.setItem(API_KEY_STORAGE_KEY, key.trim());
-    } else {
+    const trimmed = key.trim();
+    if (!trimmed) {
       localStorage.removeItem(API_KEY_STORAGE_KEY);
+      return true;
+    }
+    if (isValidApiKeyFormat(trimmed)) {
+      localStorage.setItem(API_KEY_STORAGE_KEY, trimmed);
+      return true;
+    } else {
+      console.warn('Attempted to save invalid API key format');
+      return false;
     }
   } catch (e) {
     console.error('Failed to save API key to localStorage', e);
+    return false;
+  }
+}
+
+/**
+ * Executes a fetch request with an automatic abort timeout to prevent hanging connections
+ */
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -40,19 +72,24 @@ export async function generateAiEventPlan(
     };
   }
 
-  const prompt = `You are Planora, an expert GenAI event planning director.
+  const safeTitle = sanitizeText(details.title);
+  const safeLocation = sanitizeText(details.location);
+  const safeNotes = details.notes ? sanitizeText(details.notes) : 'None';
+  const safeInstructions = customInstructions ? sanitizeText(customInstructions) : '';
+
+  const prompt = `You are Planora, an expert event planning director.
 Generate a structured JSON event plan for the following event:
 Event Type: ${details.type}
-Title: ${details.title}
+Title: """${safeTitle}"""
 Target Date: ${details.date}
 Guest Count: ${details.guestCount}
 Total Budget: ${details.currency} ${details.totalBudget}
 Vibe/Style: ${details.vibe}
-Location: ${details.location}
-Notes: ${details.notes || 'None'}
-${customInstructions ? `Special Instructions: ${customInstructions}` : ''}
+Location: """${safeLocation}"""
+Notes: """${safeNotes}"""
+${safeInstructions ? `Special Instructions: """${safeInstructions}"""` : ''}
 
-You must return ONLY a valid JSON object matching this structure:
+CRITICAL: Return ONLY a valid JSON object matching this structure with no conversational prefix:
 {
   "budget": [
     {
@@ -116,7 +153,7 @@ You must return ONLY a valid JSON object matching this structure:
 }`;
 
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
@@ -144,18 +181,25 @@ You must return ONLY a valid JSON object matching this structure:
     if (!rawText) throw new Error('No content returned from Gemini');
 
     const parsed = JSON.parse(rawText);
-    const fallback = generateEventPlan(details);
+    const sanitizedPlan = validateAndSanitizePlan({
+      details,
+      budget: parsed.budget,
+      timeline: parsed.timeline,
+      vendors: parsed.vendors,
+      ideas: parsed.ideas,
+      accessibility: parsed.accessibility,
+    });
+
+    if (sanitizedPlan) {
+      return {
+        plan: sanitizedPlan,
+        source: 'gemini',
+      };
+    }
 
     return {
-      plan: {
-        details,
-        budget: Array.isArray(parsed.budget) && parsed.budget.length > 0 ? parsed.budget : fallback.budget,
-        timeline: Array.isArray(parsed.timeline) && parsed.timeline.length > 0 ? parsed.timeline : fallback.timeline,
-        vendors: Array.isArray(parsed.vendors) && parsed.vendors.length > 0 ? parsed.vendors : fallback.vendors,
-        ideas: Array.isArray(parsed.ideas) && parsed.ideas.length > 0 ? parsed.ideas : fallback.ideas,
-        accessibility: Array.isArray(parsed.accessibility) && parsed.accessibility.length > 0 ? parsed.accessibility : fallback.accessibility,
-      },
-      source: 'gemini',
+      plan: generateEventPlan(details),
+      source: 'heuristic',
     };
   } catch (error) {
     console.error('Error generating event with Gemini, using heuristic engine:', error);
@@ -174,19 +218,24 @@ export async function sendChatMessage(
   currentPlan: FullEventPlan,
   userPrompt: string
 ): Promise<string> {
+  const safeUserPrompt = sanitizeText(userPrompt).slice(0, 1500);
+  if (!safeUserPrompt) {
+    return "Please enter a valid message.";
+  }
+
   const apiKey = getStoredApiKey();
 
   // If no API key, use context-aware smart response engine
   if (!apiKey) {
-    return generateOfflineChatResponse(currentPlan, userPrompt);
+    return generateOfflineChatResponse(currentPlan, safeUserPrompt);
   }
 
-  const systemContext = `You are Planora, an empathetic, organized, elite event planning assistant.
-The user is planning a ${currentPlan.details.type} event titled "${currentPlan.details.title}".
+  const systemContext = `You are Planora, an organized, elite event planning assistant.
+The user is planning a ${currentPlan.details.type} event titled "${sanitizeText(currentPlan.details.title)}".
 Guest Count: ${currentPlan.details.guestCount}
 Budget: ${currentPlan.details.currency} ${currentPlan.details.totalBudget}
 Date: ${currentPlan.details.date}
-Location: ${currentPlan.details.location}
+Location: ${sanitizeText(currentPlan.details.location)}
 Current budget items count: ${currentPlan.budget.length}
 Current tasks count: ${currentPlan.timeline.length}
 
@@ -198,12 +247,12 @@ Answer the user's question clearly, constructively, and formatted in clean markd
       { role: 'model', parts: [{ text: "Understood! I'm ready to assist with planning this event." }] },
       ...messages.slice(-6).map((m) => ({
         role: m.role === 'user' ? 'user' : 'model',
-        parts: [{ text: m.content }],
+        parts: [{ text: sanitizeText(m.content).slice(0, 1500) }],
       })),
-      { role: 'user', parts: [{ text: userPrompt }] },
+      { role: 'user', parts: [{ text: safeUserPrompt }] },
     ];
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
@@ -219,13 +268,14 @@ Answer the user's question clearly, constructively, and formatted in clean markd
     );
 
     if (!response.ok) {
-      return generateOfflineChatResponse(currentPlan, userPrompt);
+      return generateOfflineChatResponse(currentPlan, safeUserPrompt);
     }
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || generateOfflineChatResponse(currentPlan, userPrompt);
+    const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return rawReply ? sanitizeText(rawReply) : generateOfflineChatResponse(currentPlan, safeUserPrompt);
   } catch (e) {
-    return generateOfflineChatResponse(currentPlan, userPrompt);
+    return generateOfflineChatResponse(currentPlan, safeUserPrompt);
   }
 }
 

@@ -7,9 +7,8 @@ import {
   AlertCircle, 
   Plus, 
   Trash2, 
-  Sparkles, 
   Check, 
-  Filter,
+  Filter, 
   ListOrdered
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -349,8 +348,9 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({
                         </span>
 
                         {task.timeSlot && (
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            🕒 {task.timeSlot}
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-indigo-500" />
+                            <span>{task.timeSlot}</span>
                           </span>
                         )}
 

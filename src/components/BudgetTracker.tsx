@@ -8,7 +8,6 @@ import {
   AlertCircle, 
   CheckCircle2, 
   PieChart, 
-  Sparkles,
   ArrowUpDown
 } from 'lucide-react';
 import { BudgetItem, BudgetCategory, PaymentStatus, CurrencyCode } from '../types/event';
@@ -227,8 +226,18 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
           <div className={`text-xl font-bold mt-1 ${isOverBudget ? 'text-rose-600' : 'text-emerald-600'}`}>
             {formatCurrency(remaining, currency)}
           </div>
-          <p className={`text-xs mt-1 font-medium ${isOverBudget ? 'text-rose-600' : 'text-emerald-700'}`}>
-            {isOverBudget ? '⚠️ Budget limit exceeded' : '✓ Safe fiscal margin'}
+          <p className={`text-xs mt-1 font-medium flex items-center gap-1 ${isOverBudget ? 'text-rose-600' : 'text-emerald-700'}`}>
+            {isOverBudget ? (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>Budget limit exceeded</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>Within planned budget</span>
+              </>
+            )}
           </p>
         </div>
       </div>

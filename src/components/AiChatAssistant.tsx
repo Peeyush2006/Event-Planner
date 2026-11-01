@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Sparkles, 
+  MessageSquare,
   Send, 
   Bot, 
   User, 
   RotateCcw, 
-  HelpCircle,
-  Lightbulb,
+  Sparkles,
   DollarSign,
   Clock,
   ShieldAlert
@@ -101,15 +100,15 @@ How can I help optimize your event today? You can ask me to adjust budgets, gene
   return (
     <div className="flex flex-col h-[700px] max-h-[80vh] rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
       {/* Chat Header */}
-      <div className="p-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-xs">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+            <MessageSquare className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
               Planora AI Planner
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
             </h3>
             <p className="text-[11px] text-slate-500">
               Context-Aware Assistant • {plan.details.title}
@@ -150,7 +149,7 @@ How can I help optimize your event today? You can ask me to adjust budgets, gene
                 className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 text-xs leading-relaxed space-y-2 ${
                   isUser
                     ? 'bg-indigo-600 text-white rounded-tr-none'
-                    : 'bg-slate-50 border border-slate-200/90 text-slate-800 rounded-tl-none whitespace-pre-line'
+                    : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none whitespace-pre-line'
                 }`}
               >
                 <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:text-slate-900">
@@ -173,7 +172,7 @@ How can I help optimize your event today? You can ask me to adjust budgets, gene
             <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs font-bold">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-none p-3.5 flex items-center gap-1.5">
+            <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-3.5 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" />
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]" />

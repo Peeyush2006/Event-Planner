@@ -1,31 +1,47 @@
 import { FullEventPlan, BudgetItem } from '../types/event';
+import { sanitizeForCsv } from '../utils/validation';
+
+/**
+ * Safely sanitizes a string for use in downloaded filenames
+ * Prevents directory traversal and control characters
+ */
+function sanitizeFileName(name: string, fallback: string): string {
+  const safe = name
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .slice(0, 50);
+  return safe || fallback;
+}
 
 export function exportBudgetToCsv(budget: BudgetItem[], eventTitle: string): void {
   const headers = ['Category', 'Item Name', 'Estimated Cost', 'Actual Cost', 'Difference', 'Status', 'Notes'];
   
   const rows = budget.map((b) => {
-    const diff = b.estimatedCost - b.actualCost;
+    const diff = Number(b.estimatedCost || 0) - Number(b.actualCost || 0);
     return [
-      `"${b.category}"`,
-      `"${b.name.replace(/"/g, '""')}"`,
-      b.estimatedCost,
-      b.actualCost,
+      sanitizeForCsv(b.category),
+      sanitizeForCsv(b.name),
+      Number(b.estimatedCost || 0),
+      Number(b.actualCost || 0),
       diff,
-      b.status,
-      `"${(b.notes || '').replace(/"/g, '""')}"`,
+      sanitizeForCsv(b.status),
+      sanitizeForCsv(b.notes || ''),
     ];
   });
 
-  const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+  const csvContent = [headers.map(sanitizeForCsv).join(','), ...rows.map((r) => r.join(','))].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `${eventTitle.toLowerCase().replace(/\s+/g, '_')}_budget.csv`);
+  const safeTitle = sanitizeFileName(eventTitle, 'event');
+  link.setAttribute('download', `${safeTitle}_budget.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export function exportFullPlanToJson(plan: FullEventPlan): void {
@@ -35,8 +51,10 @@ export function exportFullPlanToJson(plan: FullEventPlan): void {
 
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `${plan.details.title.toLowerCase().replace(/\s+/g, '_')}_plan.json`);
+  const safeTitle = sanitizeFileName(plan.details?.title || 'event', 'event');
+  link.setAttribute('download', `${safeTitle}_plan.json`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

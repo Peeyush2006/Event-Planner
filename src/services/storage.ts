@@ -1,5 +1,6 @@
 import { FullEventPlan } from '../types/event';
 import { PRESET_EVENTS, getPresetPlan } from '../data/presetTemplates';
+import { validateAndSanitizePlan } from '../utils/validation';
 
 const PLAN_STORAGE_KEY = 'planora_active_event_plan';
 
@@ -8,8 +9,9 @@ export function loadSavedPlan(): FullEventPlan {
     const raw = localStorage.getItem(PLAN_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.details && parsed.budget) {
-        return parsed;
+      const validated = validateAndSanitizePlan(parsed);
+      if (validated) {
+        return validated;
       }
     }
   } catch (e) {
@@ -21,7 +23,10 @@ export function loadSavedPlan(): FullEventPlan {
 
 export function savePlanToStorage(plan: FullEventPlan): void {
   try {
-    localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plan));
+    const validated = validateAndSanitizePlan(plan);
+    if (validated) {
+      localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(validated));
+    }
   } catch (e) {
     console.error('Error saving plan to storage:', e);
   }

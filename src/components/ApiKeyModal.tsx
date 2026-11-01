@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Key, ShieldCheck, Check, Sparkles, ExternalLink } from 'lucide-react';
+import { X, Key, ShieldCheck, Check, Info, ExternalLink, AlertTriangle } from 'lucide-react';
 import { getStoredApiKey, saveApiKey } from '../services/geminiApi';
+import { isValidApiKeyFormat } from '../utils/validation';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -16,12 +17,26 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   if (!isOpen) return null;
 
   const [keyInput, setKeyInput] = useState(getStoredApiKey());
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    saveApiKey(keyInput);
-    onKeySaved(keyInput);
+    setErrorMessage(null);
+
+    const trimmed = keyInput.trim();
+    if (trimmed && !isValidApiKeyFormat(trimmed)) {
+      setErrorMessage('Invalid API key format. Key should be 20–80 alphanumeric characters (e.g. starting with AIzaSy...).');
+      return;
+    }
+
+    const success = saveApiKey(trimmed);
+    if (!success && trimmed) {
+      setErrorMessage('Could not store key. Please check your browser settings.');
+      return;
+    }
+
+    onKeySaved(trimmed);
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
@@ -32,12 +47,13 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const handleClear = () => {
     saveApiKey('');
     setKeyInput('');
+    setErrorMessage(null);
     onKeySaved('');
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -46,7 +62,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm text-slate-900">Google Gemini API Configuration</h3>
-              <p className="text-[11px] text-slate-500">Optional live GenAI enhancement</p>
+              <p className="text-[11px] text-slate-500">Connect for live AI-powered responses</p>
             </div>
           </div>
           <button
@@ -60,9 +76,16 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSave} className="p-5 space-y-4 text-xs">
+          {errorMessage && (
+            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           <div className="p-3 rounded-xl bg-indigo-50/60 border border-indigo-100 text-indigo-950 space-y-1.5 leading-relaxed">
             <div className="flex items-center gap-1.5 font-bold text-indigo-900">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <Info className="w-3.5 h-3.5 text-indigo-600" />
               <span>Offline Intelligence Ready</span>
             </div>
             <p>
