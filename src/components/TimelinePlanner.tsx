@@ -14,6 +14,7 @@ import {
 import confetti from 'canvas-confetti';
 import { TimelineTask, TaskPhase, TaskPriority, TaskStatus } from '../types/event';
 import { formatDate } from '../utils/formatters';
+import { sanitizeText } from '../utils/validation';
 
 interface TimelinePlannerProps {
   timeline: TimelineTask[];
@@ -97,19 +98,20 @@ export const TimelinePlanner: React.FC<TimelinePlannerProps> = ({
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskForm.title.trim()) return;
+    const cleanTitle = sanitizeText(taskForm.title).slice(0, 150);
+    if (!cleanTitle) return;
 
     const newTask: TimelineTask = {
       id: `task-${Date.now()}`,
       phase: taskForm.phase,
       phaseLabel: PHASES.find((p) => p.id === taskForm.phase)?.label || 'Planning',
-      title: taskForm.title.trim(),
-      description: taskForm.description.trim(),
-      dueDate: taskForm.dueDate,
+      title: cleanTitle,
+      description: sanitizeText(taskForm.description).slice(0, 1000),
+      dueDate: /^\d{4}-\d{2}-\d{2}$/.test(taskForm.dueDate) ? taskForm.dueDate : eventDate,
       priority: taskForm.priority,
       status: 'todo',
-      timeSlot: taskForm.timeSlot.trim() || undefined,
-      category: taskForm.category.trim() || 'General',
+      timeSlot: taskForm.timeSlot ? sanitizeText(taskForm.timeSlot).slice(0, 50) : undefined,
+      category: sanitizeText(taskForm.category).slice(0, 50) || 'General',
     };
 
     onUpdateTimeline([...timeline, newTask]);

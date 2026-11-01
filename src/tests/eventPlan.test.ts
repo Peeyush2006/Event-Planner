@@ -7,7 +7,14 @@ import {
   generateAccessibilityItems, 
   generateEventPlan 
 } from '../services/heuristicEngine';
-import { validateEventInput, analyzeBudgetFeasibility, sanitizeText } from '../utils/validation';
+import { 
+  validateEventInput, 
+  analyzeBudgetFeasibility, 
+  sanitizeText, 
+  sanitizeForCsv, 
+  isValidApiKeyFormat, 
+  validateAndSanitizePlan 
+} from '../utils/validation';
 import { formatCurrency, calculateCountdown } from '../utils/formatters';
 import { EventDetails } from '../types/event';
 
@@ -44,6 +51,81 @@ describe('Validation & Security Utilities', () => {
     expect(clean).not.toContain('<script>');
     expect(clean).not.toContain('</script>');
     expect(clean).toBe('alert("hack")Forest Wedding');
+  });
+
+  it('should recursively strip nested and malformed HTML tags', () => {
+    const nested = '<<SCRIPT>alert("nested")//<</SCRIPT>Clean Title';
+    const clean = sanitizeText(nested);
+    expect(clean).not.toContain('<');
+    expect(clean).not.toContain('>');
+    expect(clean).toContain('Clean Title');
+  });
+
+  it('should neutralize javascript: and vbscript: URIs', () => {
+    const malicious = 'javascript:alert(document.cookie);';
+    const clean = sanitizeText(malicious);
+    expect(clean).not.toContain('javascript:');
+    expect(clean).toBe('alert(document.cookie);');
+  });
+
+  it('should neutralize CSV formula injection attacks', () => {
+    // Tests for =cmd, @SUM, +1, -1, tab, and internal quotes
+    const formulaPayload = '=cmd|\'/C calc\'!A0';
+    const atPayload = '@SUM(1+1)*cmd';
+    const plusPayload = '+1234';
+    const normalPayload = 'Normal Venue Rental';
+
+    const safeFormula = sanitizeForCsv(formulaPayload);
+    const safeAt = sanitizeForCsv(atPayload);
+    const safePlus = sanitizeForCsv(plusPayload);
+    const safeNormal = sanitizeForCsv(normalPayload);
+
+    expect(safeFormula).toBe('"\'=cmd|\'/C calc\'!A0"');
+    expect(safeAt).toBe('"\'@SUM(1+1)*cmd"');
+    expect(safePlus).toBe('"\'+1234"');
+    expect(safeNormal).toBe('"Normal Venue Rental"');
+  });
+
+  it('should validate API key formats properly', () => {
+    expect(isValidApiKeyFormat('AIzaSyD-sample-key_1234567890ABCDEF')).toBe(true);
+    expect(isValidApiKeyFormat('sk-proj-12345678901234567890')).toBe(true);
+    expect(isValidApiKeyFormat('short')).toBe(false);
+    expect(isValidApiKeyFormat('')).toBe(false);
+    expect(isValidApiKeyFormat('<script>alert(1)</script>')).toBe(false);
+    expect(isValidApiKeyFormat('key with spaces in the middle')).toBe(false);
+  });
+
+  it('should validate and sanitize arbitrary/untrusted plan data', () => {
+    const maliciousPayload = {
+      details: {
+        title: '<img src=x onerror=alert(1)> Gala Dinner',
+        guestCount: -9999,
+        totalBudget: 'not a number',
+        currency: 'INVALID',
+        date: 'malformed-date',
+      },
+      budget: [
+        {
+          name: '=1+1',
+          estimatedCost: -500,
+          actualCost: 'hack',
+          status: 'invalid_status',
+        },
+      ],
+      __proto__: { polluted: true },
+    };
+
+    const sanitized = validateAndSanitizePlan(maliciousPayload);
+    expect(sanitized).not.toBeNull();
+    if (sanitized) {
+      expect(sanitized.details.title).not.toContain('<img');
+      expect(sanitized.details.guestCount).toBeGreaterThanOrEqual(1);
+      expect(sanitized.details.totalBudget).toBe(0);
+      expect(sanitized.details.currency).toBe('USD');
+      expect(sanitized.budget[0].estimatedCost).toBe(0);
+      expect(sanitized.budget[0].actualCost).toBe(0);
+      expect(sanitized.budget[0].status).toBe('planned');
+    }
   });
 
   it('should warn when per-guest budget is unrealistically low', () => {

@@ -13,6 +13,7 @@ import {
 import { BudgetItem, BudgetCategory, PaymentStatus, CurrencyCode } from '../types/event';
 import { formatCurrency } from '../utils/formatters';
 import { exportBudgetToCsv } from '../services/exportUtils';
+import { sanitizeText } from '../utils/validation';
 
 interface BudgetTrackerProps {
   budget: BudgetItem[];
@@ -84,16 +85,17 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
 
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    const cleanName = sanitizeText(formData.name).slice(0, 100);
+    if (!cleanName) return;
 
     const newItem: BudgetItem = {
       id: `budget-${Date.now()}`,
       category: formData.category,
-      name: formData.name.trim(),
-      estimatedCost: Number(formData.estimatedCost) || 0,
-      actualCost: Number(formData.actualCost) || 0,
+      name: cleanName,
+      estimatedCost: Math.min(Math.max(0, Number(formData.estimatedCost) || 0), 100000000),
+      actualCost: Math.min(Math.max(0, Number(formData.actualCost) || 0), 100000000),
       status: formData.status,
-      notes: formData.notes.trim(),
+      notes: sanitizeText(formData.notes).slice(0, 500),
     };
 
     onUpdateBudget([...budget, newItem]);
@@ -109,16 +111,19 @@ export const BudgetTracker: React.FC<BudgetTrackerProps> = ({
   };
 
   const handleSaveEdit = (id: string) => {
+    const cleanName = sanitizeText(formData.name).slice(0, 100);
+    if (!cleanName) return;
+
     const updated = budget.map((b) => {
       if (b.id === id) {
         return {
           ...b,
-          name: formData.name,
+          name: cleanName,
           category: formData.category,
-          estimatedCost: Number(formData.estimatedCost) || 0,
-          actualCost: Number(formData.actualCost) || 0,
+          estimatedCost: Math.min(Math.max(0, Number(formData.estimatedCost) || 0), 100000000),
+          actualCost: Math.min(Math.max(0, Number(formData.actualCost) || 0), 100000000),
           status: formData.status,
-          notes: formData.notes,
+          notes: sanitizeText(formData.notes).slice(0, 500),
         };
       }
       return b;

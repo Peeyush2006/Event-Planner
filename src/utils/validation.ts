@@ -3,9 +3,33 @@
  * Comprehensive defense against XSS, CSV injection, prototype pollution, and malformed payloads.
  */
 
-import { FullEventPlan, BudgetItem, TimelineTask, VendorItem, PersonalizedIdea, AccessibilityCheckItem, CurrencyCode } from '../types/event';
+import { FullEventPlan, BudgetItem, TimelineTask, VendorItem, PersonalizedIdea, AccessibilityCheckItem, CurrencyCode, BudgetCategory, EventVibe, EventType } from '../types/event';
 
 const DANGEROUS_CSV_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+
+const VALID_BUDGET_CATEGORIES: BudgetCategory[] = [
+  'Venue & Rentals',
+  'Catering & Beverages',
+  'Photography & Video',
+  'Decor, Florals & Signage',
+  'Music & Entertainment',
+  'Attire & Beauty',
+  'Permits, Insurance & Safety',
+  'Stationery & Favors',
+  'Logistics & Waste',
+  'Contingency Fund',
+];
+
+const VALID_VIBES: EventVibe[] = [
+  'classic-elegant',
+  'rustic-outdoor',
+  'modern-minimalist',
+  'boho-chic',
+  'colorful-festive',
+  'retro-vintage',
+  'eco-friendly',
+  'cultural-traditional',
+];
 
 /**
  * Robustly sanitizes text strings to prevent HTML injection, script execution,
@@ -128,10 +152,18 @@ export function validateAndSanitizePlan(raw: unknown): FullEventPlan | null {
       ? candidate.details.currency
       : 'USD';
 
+    const safeType: EventType = ['wedding', 'birthday', 'community'].includes(candidate.details.type)
+      ? (candidate.details.type as EventType)
+      : 'wedding';
+
+    const safeVibe: EventVibe = VALID_VIBES.includes(candidate.details.vibe)
+      ? (candidate.details.vibe as EventVibe)
+      : 'classic-elegant';
+
     const safeDetails = {
       id: sanitizeText(candidate.details.id) || `event-${Date.now()}`,
       title: sanitizeText(candidate.details.title) || 'My Planned Event',
-      type: ['wedding', 'birthday', 'community'].includes(candidate.details.type) ? candidate.details.type : 'wedding',
+      type: safeType,
       date: typeof candidate.details.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(candidate.details.date)
         ? candidate.details.date
         : new Date().toISOString().split('T')[0],
@@ -139,21 +171,27 @@ export function validateAndSanitizePlan(raw: unknown): FullEventPlan | null {
       guestCount: Math.min(Math.max(1, Number(candidate.details.guestCount) || 1), 100000),
       totalBudget: Math.min(Math.max(0, Number(candidate.details.totalBudget) || 0), 1000000000),
       currency,
-      vibe: sanitizeText(candidate.details.vibe) || 'classic-elegant',
+      vibe: safeVibe,
       notes: candidate.details.notes ? sanitizeText(candidate.details.notes) : undefined,
       createdAt: candidate.details.createdAt ? sanitizeText(candidate.details.createdAt) : new Date().toISOString(),
     };
 
     const safeBudget: BudgetItem[] = Array.isArray(candidate.budget)
-      ? candidate.budget.slice(0, 150).map((b: any, idx: number) => ({
-          id: sanitizeText(b.id) || `b-${idx}-${Date.now()}`,
-          category: sanitizeText(b.category) || 'General',
-          name: sanitizeText(b.name) || 'Expense Item',
-          estimatedCost: Math.min(Math.max(0, Number(b.estimatedCost) || 0), 100000000),
-          actualCost: Math.min(Math.max(0, Number(b.actualCost) || 0), 100000000),
-          status: ['planned', 'deposit_paid', 'paid_in_full'].includes(b.status) ? b.status : 'planned',
-          notes: b.notes ? sanitizeText(b.notes) : undefined,
-        }))
+      ? candidate.budget.slice(0, 150).map((b: any, idx: number) => {
+          const category: BudgetCategory = VALID_BUDGET_CATEGORIES.includes(b.category)
+            ? (b.category as BudgetCategory)
+            : 'Venue & Rentals';
+
+          return {
+            id: sanitizeText(b.id) || `b-${idx}-${Date.now()}`,
+            category,
+            name: sanitizeText(b.name) || 'Expense Item',
+            estimatedCost: Math.min(Math.max(0, Number(b.estimatedCost) || 0), 100000000),
+            actualCost: Math.min(Math.max(0, Number(b.actualCost) || 0), 100000000),
+            status: ['planned', 'deposit_paid', 'paid_in_full'].includes(b.status) ? b.status : 'planned',
+            notes: b.notes ? sanitizeText(b.notes) : undefined,
+          };
+        })
       : [];
 
     const safeTimeline: TimelineTask[] = Array.isArray(candidate.timeline)
